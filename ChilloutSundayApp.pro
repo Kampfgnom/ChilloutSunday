@@ -1,15 +1,15 @@
 cache()
 
-TEMPLATE = subdirs
+QPersistence.subdir         =   lib/QPersistence
+QPersistence.depends        =
+QSerienJunkies.subdir       =   lib/QSerienJunkies
+QSerienJunkies.depends      =
+src.subdir                  =  src
+src.depends                 =   QPersistence \
+                                QSerienJunkies
 
-SUBDIRS     =   lib/QPersistence \
-                lib/QSerienJunkies \
+TEMPLATE = subdirs
+SUBDIRS     =   QPersistence \
+                QSerienJunkies \
                 src
 
-
-QPersistence.subdir         =   lib/QPersistence
-QSerienJunkies.subdir       =   lib/QSerienJunkies
-
-src.subdir               =  src
-src.depends              =  QPersistence \
-                            QSerienJunkies

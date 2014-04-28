@@ -1,8 +1,8 @@
 TEMPLATE = subdirs
 
 CONFIG += ordered
-SUBDIRS = src example
+SUBDIRS = src #example
 
-example.depends = src
+#example.depends = src
 
 OTHER_FILES += README.md
