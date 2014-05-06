@@ -1,6 +1,6 @@
 #include "database.h"
 
-#include <model/package.h>
+#include <model/downloadpackage.h>
 
 #include <QPersistence.h>
 
@@ -64,7 +64,7 @@ bool Database::open(bool cleanDatabase)
     }
 
     Qp::setDatabase(db);
-    Qp::registerClass<Package>();
+    Qp::registerClass<DownloadPackage>();
 
     if(cleanDatabase) {
         QpDatabaseSchema databaseSchema;

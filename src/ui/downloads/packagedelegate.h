@@ -3,7 +3,7 @@
 
 #include <QStyledItemDelegate>
 
-class Package;
+class DownloadPackage;
 
 class PackageDelegate : public QStyledItemDelegate
 {

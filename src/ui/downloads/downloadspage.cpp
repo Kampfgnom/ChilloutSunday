@@ -4,7 +4,7 @@
 #include "packagesmodel.h"
 #include "packagedelegate.h"
 
-#include <model/package.h>
+#include <model/downloadpackage.h>
 
 #include <QClipboard>
 #include <QTimer>
@@ -15,9 +15,11 @@ DownloadsPage::DownloadsPage(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->treeViewDownloads->setAttribute(Qt::WA_MacShowFocusRect, false);
-    ui->treeViewDownloads->setModel(new PackagesSortFilterModel(ui->treeViewDownloads));
-    ui->treeViewDownloads->setItemDelegate(new PackageDelegate(ui->treeViewDownloads));
+    PackagesSortFilterModel *m_modelPackages = new PackagesSortFilterModel(this);
+
+    ui->treeViewPackages->setAttribute(Qt::WA_MacShowFocusRect, false);
+    ui->treeViewPackages->setModel(m_modelPackages);
+    ui->treeViewPackages->setItemDelegate(new PackageDelegate(this));
 
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &DownloadsPage::parseClipboard);
@@ -43,9 +45,14 @@ void DownloadsPage::parseClipboard()
     if (!url.isValid())
         return;
 
-    if(!Package::isPackageUrl(url))
+    if(!DownloadPackage::isPackageUrl(url))
         return;
 
-    QSharedPointer<Package> package = Package::createPackage(url);
+    QSharedPointer<DownloadPackage> package = DownloadPackage::createPackage(url);
     package->decrypt();
+}
+
+void DownloadsPage::on_treeViewPackages_clicked(const QModelIndex &index)
+{
+
 }

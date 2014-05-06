@@ -2,9 +2,9 @@
 #define PACKAGESMODEL_H
 
 #include <QPersistence.h>
-#include <model/package.h>
+#include <model/downloadpackage.h>
 
-class PackagesModel : public QpObjectListModel<Package>
+class PackagesModel : public QpObjectListModel<DownloadPackage>
 {
 public:
     enum Roles {
@@ -19,7 +19,7 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const Q_DECL_OVERRIDE;
 };
 
-class PackagesSortFilterModel : public QpSortFilterProxyObjectModel<Package>
+class PackagesSortFilterModel : public QpSortFilterProxyObjectModel<DownloadPackage>
 {
 public:
     PackagesSortFilterModel(QObject *parent);

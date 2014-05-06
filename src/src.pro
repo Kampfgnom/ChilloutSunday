@@ -49,11 +49,13 @@ include($$QTAWESOME_PATH/QtAwesome.pri)
 
 SOURCES += main.cpp \
     ui/mainwindow.cpp \
-    model/package.cpp \
     ui/downloads/downloadspage.cpp \
     database.cpp \
     ui/downloads/packagesmodel.cpp \
-    ui/downloads/packagedelegate.cpp
+    ui/downloads/packagedelegate.cpp \
+    model/downloadpart.cpp \
+    model/downloadpackage.cpp \
+    ui/downloads/partmodel.cpp
 
 FORMS += \
     ui/mainwindow.ui \
@@ -61,9 +63,11 @@ FORMS += \
 
 HEADERS += \
     ui/mainwindow.h \
-    model/package.h \
     ui/downloads/downloadspage.h \
     database.h \
     ui/downloads/packagesmodel.h \
-    ui/downloads/packagedelegate.h
+    ui/downloads/packagedelegate.h \
+    model/downloadpart.h \
+    model/downloadpackage.h \
+    ui/downloads/partmodel.h
 

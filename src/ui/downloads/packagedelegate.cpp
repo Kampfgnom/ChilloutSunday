@@ -5,20 +5,17 @@
 #include <QPainter>
 #include <QLineEdit>
 
-const int MARGIN = 5;
-const int RECT_RADIUS = 4;
-
 PackageDelegate::PackageDelegate(QWidget *parent) :
     QStyledItemDelegate(parent)
 {
 }
 
-void PackageDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+void PackageDelegate::setModelData(QWidget *editor, QAbstractItemModel *, const QModelIndex &index) const
 {
     QLineEdit *lineEdit = static_cast<QLineEdit *>(editor);
     QString text = lineEdit->text();
 
-    QSharedPointer<Package> package = index.data(PackagesModel::ObjectRole).value<QSharedPointer<Package> >();
+    QSharedPointer<DownloadPackage> package = index.data(PackagesModel::ObjectRole).value<QSharedPointer<DownloadPackage> >();
     package->solveCaptcha(text);
 }
 
