@@ -1,4 +1,4 @@
-#include "partmodel.h"
+#include "partsmodel.h"
 
 PartsModel::PartsModel(QObject *parent) :
     QpObjectListModel<DownloadPart>(parent)
@@ -41,7 +41,7 @@ QVariant PartsModel::headerData(int section, Qt::Orientation orientation, int ro
  * DownloadsSortFilterModel
  */
 PartsSortFilterModel::PartsSortFilterModel(QObject *parent) :
-    QpSortFilterProxyObjectModel<DownloadPart>(parent)
+    QpSortFilterProxyObjectModel<DownloadPart>(new PartsModel(parent), parent)
 {
 }
 

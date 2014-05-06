@@ -19,13 +19,13 @@ public:
     QUrl url() const;
     QSharedPointer<DownloadPackage> package() const;
 
-private slots:
-    void setUrl(QUrl arg);
-    void setPackage(QSharedPointer<DownloadPackage> arg);
-
 signals:
     void packageChanged(QSharedPointer<DownloadPackage> arg);
     void urlChanged(QUrl arg);
+
+private slots:
+    void setUrl(QUrl arg);
+    void setPackage(QSharedPointer<DownloadPackage> arg);
 
 private:
     friend class DownloadPackage;

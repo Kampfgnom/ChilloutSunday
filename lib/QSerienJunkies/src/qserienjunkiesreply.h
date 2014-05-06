@@ -64,12 +64,11 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void seriesSearchReplyFinished();
-    void seriesLocationReplyFinished();
     void seasonSearchReplyFinished();
     void downloadSearchReplyFinished();
     void decryptLinkReplyFinished();
     void decryptedLinkReplyFinished();
-    void onError();
+    void handleError();
 
 private:
     friend class QSerienJunkies;

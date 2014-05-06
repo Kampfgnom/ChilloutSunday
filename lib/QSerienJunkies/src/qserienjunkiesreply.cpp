@@ -9,6 +9,8 @@
 #include <QJsonDocument>
 #include <QDebug>
 #include <QRegularExpression>
+#include <QPointer>
+
 #include <functional>
 
 static QString removeHTMLTags(QString line) {
@@ -52,6 +54,8 @@ public:
     QList<QUrl> downloadLinks;
     QString packageName;
 
+    QPointer<QNetworkReply> reply;
+
     QSerienJunkiesReply *q;
 };
 
@@ -66,6 +70,8 @@ QSerienJunkiesReply::~QSerienJunkiesReply()
 {
 }
 
+void (QNetworkReply:: *ERRORSIGNAL)(QNetworkReply::NetworkError) = &QNetworkReply::error;
+
 void QSerienJunkiesReply::searchSeries(const QString &string)
 {
     QByteArray postData;
@@ -75,27 +81,16 @@ void QSerienJunkiesReply::searchSeries(const QString &string)
     QNetworkRequest request = QNetworkRequest(QUrl("http://serienjunkies.org/media/ajax/search/search.php"));
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
-    QNetworkReply *reply = QSerienJunkies::networkAccessManager()->post(request, postData);
-    QObject::connect(reply, &QNetworkReply::finished,
-                     this, &QSerienJunkiesReply::seriesSearchReplyFinished);
-
-    QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
-                     this, SLOT(onError()));
-
-    QObject::connect(this, &QObject::destroyed,
-                     reply, &QNetworkReply::deleteLater);
+    data->reply = QSerienJunkies::networkAccessManager()->post(request, postData);
+    connect(data->reply, &QNetworkReply::finished, this, &QSerienJunkiesReply::seriesSearchReplyFinished);
+    connect(data->reply, ERRORSIGNAL ,this, &QSerienJunkiesReply::handleError);
 }
 
 void QSerienJunkiesReply::seriesSearchReplyFinished()
 {
-    QNetworkReply *reply = static_cast<QNetworkReply *>(sender());
-    if(!reply)
-        return;
-
     QJsonParseError jsonError;
-    QJsonDocument jsonDocument = QJsonDocument::fromJson(reply->readAll(), &jsonError);
-    reply->deleteLater();
-    reply = nullptr;
+    QJsonDocument jsonDocument = QJsonDocument::fromJson(data->reply->readAll(), &jsonError);
+    data->reply.clear();
 
     if(jsonError.error != QJsonParseError::NoError) {
         data->errorString = "The returned JSON was not valid: "+jsonError.errorString();
@@ -126,64 +121,33 @@ void QSerienJunkiesReply::seriesSearchReplyFinished()
         Series r;
         r.id = list.at(0).toInt();
         r.name = list.at(1).toString();
+        int index = data->series.size();
         data->series.append(r);
 
         QUrl url(QString("http://serienjunkies.org/?cat=%1").arg(r.id));
-        QNetworkReply *locationReply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(url));
-        locationReply->setProperty("index", data->series.size() - 1);
+        QNetworkReply *reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(url));
+        connect(reply, ERRORSIGNAL ,this, &QSerienJunkiesReply::handleError);
+        connect(reply, &QNetworkReply::finished, [=] {
+            data->series[index].url = reply->header(QNetworkRequest::LocationHeader).toUrl();
+            reply->deleteLater();
+            ++data->finishedSeasons;
 
-        QObject::connect(locationReply, &QNetworkReply::finished,
-                         this, &QSerienJunkiesReply::seriesLocationReplyFinished);
-
-        QObject::connect(locationReply, SIGNAL(error(QNetworkReply::NetworkError)),
-                         this, SLOT(onError()));
-
-        QObject::connect(this, &QObject::destroyed,
-                         locationReply, &QNetworkReply::deleteLater);
-    }
-}
-
-void QSerienJunkiesReply::seriesLocationReplyFinished()
-{
-    QNetworkReply *reply = static_cast<QNetworkReply *>(sender());
-    if(!reply)
-        return;
-
-    int index = reply->property("index").toInt();
-    Q_ASSERT(index >= 0 && index < data->series.size());
-
-    data->series[index].url = reply->header(QNetworkRequest::LocationHeader).toUrl();
-    ++data->finishedSeasons;
-
-    reply->deleteLater();
-
-    if(data->finishedSeasons == data->seasonCount) {
-        emit finished();
+            if(data->finishedSeasons == data->seasonCount)
+                emit finished();
+        });
     }
 }
 
 void QSerienJunkiesReply::searchSeasons(const QUrl &seriesUrl)
 {
-    QNetworkReply *reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(seriesUrl));
-    QObject::connect(reply, &QNetworkReply::finished,
-                     this, &QSerienJunkiesReply::seasonSearchReplyFinished);
-
-    QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
-                     this, SLOT(onError()));
-
-    QObject::connect(this, &QObject::destroyed,
-                     reply, &QNetworkReply::deleteLater);
+    data->reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(seriesUrl));
+    connect(data->reply, &QNetworkReply::finished, this, &QSerienJunkiesReply::seasonSearchReplyFinished);
+    connect(data->reply, ERRORSIGNAL ,this, &QSerienJunkiesReply::handleError);
 }
 
 void QSerienJunkiesReply::seasonSearchReplyFinished()
 {
-    QNetworkReply *reply = static_cast<QNetworkReply *>(sender());
-    if(!reply)
-        return;
-
-    QString page = QString::fromUtf8(reply->readAll());
-    reply->deleteLater();
-    reply = nullptr;
+    QString page = QString::fromUtf8(data->reply->readAll());
 
     QRegularExpression reg("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br");
     QRegularExpressionMatchIterator it = reg.globalMatch(page);
@@ -201,39 +165,22 @@ void QSerienJunkiesReply::seasonSearchReplyFinished()
 
 void QSerienJunkiesReply::searchDownloads(const QUrl &seasonUrl)
 {
-    QNetworkReply *reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(seasonUrl));
-    QObject::connect(reply, &QNetworkReply::finished,
-                     this, &QSerienJunkiesReply::downloadSearchReplyFinished);
-
-    QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
-                     this, SLOT(onError()));
-
-    QObject::connect(this, &QObject::destroyed,
-                     reply, &QNetworkReply::deleteLater);
+    data->reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(seasonUrl));
+    connect(data->reply, &QNetworkReply::finished, this, &QSerienJunkiesReply::downloadSearchReplyFinished);
+    connect(data->reply, ERRORSIGNAL ,this, &QSerienJunkiesReply::handleError);
 }
 
 void QSerienJunkiesReply::downloadSearchReplyFinished()
 {
-    QNetworkReply *reply = static_cast<QNetworkReply *>(sender());
-    if(!reply)
-        return;
-
-    QString page = QString::fromUtf8(reply->readAll());
+    QString page = QString::fromUtf8(data->reply->readAll());
 
     if(page.isEmpty()) {
-        QUrl location = reply->header(QNetworkRequest::LocationHeader).toUrl();
+        QUrl location = data->reply->header(QNetworkRequest::LocationHeader).toUrl();
         if(location.isValid()) {
-            reply->deleteLater();
-            reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(location));
+            data->reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(location));
 
-            QObject::connect(reply, &QNetworkReply::finished,
-                             this, &QSerienJunkiesReply::downloadSearchReplyFinished);
-
-            QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
-                             this, SLOT(onError()));
-
-            QObject::connect(this, &QObject::destroyed,
-                             reply, &QNetworkReply::deleteLater);
+            connect(data->reply, &QNetworkReply::finished, this, &QSerienJunkiesReply::downloadSearchReplyFinished);
+            connect(data->reply, ERRORSIGNAL ,this, &QSerienJunkiesReply::handleError);
             return;
         }
         else {
@@ -242,9 +189,6 @@ void QSerienJunkiesReply::downloadSearchReplyFinished()
             return;
         }
     }
-
-    reply->deleteLater();
-    reply = nullptr;
 
     // This code has been taken from JDownloader and adjusted for Qt
     QStringList lines = page.split('\n');
@@ -292,28 +236,15 @@ void QSerienJunkiesReply::downloadSearchReplyFinished()
 
 void QSerienJunkiesReply::decrypt(const QUrl &url)
 {
-    QNetworkReply *reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(url));
-    QObject::connect(reply, &QNetworkReply::finished,
-                     this, &QSerienJunkiesReply::decryptLinkReplyFinished);
-
-    QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
-                     this, SLOT(onError()));
-
-    QObject::connect(this, &QObject::destroyed,
-                     reply, &QNetworkReply::deleteLater);
+    data->reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(url));
+    connect(data->reply, &QNetworkReply::finished, this, &QSerienJunkiesReply::decryptLinkReplyFinished);
+    connect(data->reply, ERRORSIGNAL ,this, &QSerienJunkiesReply::handleError);
 }
 
 void QSerienJunkiesReply::decryptLinkReplyFinished()
 {
-    QNetworkReply *reply = static_cast<QNetworkReply *>(sender());
-    if(!reply)
-        return;
-
-    QString page = QString::fromUtf8(reply->readAll());
-    data->captchaPageUrl = reply->url();
-    reply->deleteLater();
-    reply = nullptr;
-
+    QString page = QString::fromUtf8(data->reply->readAll());
+    data->captchaPageUrl = data->reply->url();
     decryptLinkReplyFinishedHelper(page);
 }
 
@@ -357,19 +288,11 @@ void QSerienJunkiesReply::decryptLinkReplyFinishedHelper(const QString &page)
 
     QUrl captchaUrl(QString("http://download.serienjunkies.org/secure/%1").arg(match.captured(1)));
 
-    QNetworkReply *reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(captchaUrl));
-    QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
-                     this, SLOT(onError()));
+    data->reply = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(captchaUrl));
+    connect(data->reply, ERRORSIGNAL ,this, &QSerienJunkiesReply::handleError);
 
-    QObject::connect(this, &QObject::destroyed,
-                     reply, &QNetworkReply::deleteLater);
-
-    connect(reply, &QNetworkReply::finished, [=]() {
-        if(!reply)
-            return;
-
-        data->captchaData = reply->readAll();
-        reply->deleteLater();
+    connect(data->reply, &QNetworkReply::finished, [=]() {
+        data->captchaData = data->reply->readAll();
         emit requiresCaptcha();
     });
 }
@@ -383,15 +306,10 @@ void QSerienJunkiesReply::solveCaptcha(const QString &captcha)
 
     QNetworkRequest request(data->captchaPageUrl);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-    QNetworkReply *reply = QSerienJunkies::networkAccessManager()->post(request, postData);
+    data->reply = QSerienJunkies::networkAccessManager()->post(request, postData);
 
-    QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
-                     this, SLOT(onError()));
-
-    QObject::connect(this, &QObject::destroyed,
-                     reply, &QNetworkReply::deleteLater);
-
-    connect(reply, &QNetworkReply::finished, this, &QSerienJunkiesReply::decryptedLinkReplyFinished);
+    connect(data->reply, &QNetworkReply::finished, this, &QSerienJunkiesReply::decryptedLinkReplyFinished);
+    connect(data->reply, ERRORSIGNAL ,this, &QSerienJunkiesReply::handleError);
 }
 
 QString QSerienJunkiesReply::packageName() const
@@ -401,14 +319,7 @@ QString QSerienJunkiesReply::packageName() const
 
 void QSerienJunkiesReply::decryptedLinkReplyFinished()
 {
-    QNetworkReply *reply = static_cast<QNetworkReply *>(sender());
-    if(!reply)
-        return;
-
-    QString page = QString::fromUtf8(reply->readAll());
-    reply->deleteLater();
-    reply = nullptr;
-
+    QString page = QString::fromUtf8(data->reply->readAll());
 
     QRegularExpression findForms("\\<FORM ACTION=\"(.+)\" STYLE=\"display: inline;\" TARGET=\"_blank\"\\>");
     QRegularExpressionMatchIterator it = findForms.globalMatch(page);
@@ -426,10 +337,7 @@ void QSerienJunkiesReply::decryptedLinkReplyFinished()
                 && url != QLatin1String("http://mirror.serienjunkies.org")) {
             ++data->downloadLinkCount;
             QNetworkReply *r = QSerienJunkies::networkAccessManager()->get(QNetworkRequest(QUrl(url)));
-
-            QObject::connect(r, SIGNAL(error(QNetworkReply::NetworkError)),
-                             this, SLOT(onError()));
-
+            connect(r, ERRORSIGNAL ,this, &QSerienJunkiesReply::handleError);
             connect(r, &QNetworkReply::finished, [=]() {
                 QUrl urlLocation = r->header(QNetworkRequest::LocationHeader).toUrl();
                 data->downloadLinks.append(urlLocation);
@@ -443,7 +351,7 @@ void QSerienJunkiesReply::decryptedLinkReplyFinished()
     }
 }
 
-void QSerienJunkiesReply::onError()
+void QSerienJunkiesReply::handleError()
 {
     QNetworkReply *reply = static_cast<QNetworkReply *>(sender());
 

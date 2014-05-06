@@ -4,6 +4,7 @@
 #include <QPersistence.h>
 #include <QUrl>
 #include <QPixmap>
+#include <QPointer>
 
 class QSerienJunkiesReply;
 class DownloadPart;
@@ -25,6 +26,7 @@ public:
         NewPackage,
         Decrypting,
         RequiresCaptcha,
+        Decrypted,
         Error
     };
 
@@ -40,11 +42,11 @@ public:
 
     QList<QSharedPointer<DownloadPart> > parts() const;
 
-    void decrypt();
-    void solveCaptcha(const QString &captchaString);
-
     static bool isPackageUrl(const QUrl &url);
-    static QSharedPointer<DownloadPackage> createPackage(const QUrl &url);
+    static QSharedPointer<DownloadPackage> decrypt(const QUrl &url);
+
+public slots:
+    void solveCaptcha(const QString &captchaString);
 
 signals:
     void sourceUrlChanged(QUrl arg);
@@ -70,6 +72,8 @@ private slots:
     void addPart(QSharedPointer<DownloadPart> arg);
     void removePart(QSharedPointer<DownloadPart> arg);
 
+    void decrypt();
+
 private:
     QUrl m_sourceUrl;
     QString m_title;
@@ -77,8 +81,9 @@ private:
     QString m_statusMessage;
     QPixmap m_captcha;
 
-    QSerienJunkiesReply *m_serienJunkiesReply;
     QpHasMany<DownloadPart> m_parts;
+
+    QPointer<QSerienJunkiesReply> m_serienJunkiesReply;
 };
 
 #endif // DOWNLOADPACKAGE_H

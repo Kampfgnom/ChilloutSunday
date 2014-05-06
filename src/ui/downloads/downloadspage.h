@@ -8,6 +8,7 @@ class DownloadsPage;
 }
 
 class PackagesSortFilterModel;
+class PartsSortFilterModel;
 
 class DownloadsPage : public QWidget
 {
@@ -25,6 +26,7 @@ private slots:
 private:
     Ui::DownloadsPage *ui;
     PackagesSortFilterModel *m_modelPackages;
+    PartsSortFilterModel *m_modelParts;
 };
 
 #endif // DOWNLOADSPAGE_H

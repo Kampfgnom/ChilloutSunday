@@ -2,6 +2,7 @@
 
 #include <database.h>
 #include <ui/mainwindow.h>
+
 #include <QTimer>
 
 const char *ARG_CLEANDB("--cleanDatabase");

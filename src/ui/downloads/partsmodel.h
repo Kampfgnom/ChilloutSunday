@@ -21,7 +21,7 @@ public:
 class PartsSortFilterModel : public QpSortFilterProxyObjectModel<DownloadPart>
 {
 public:
-    PartsSortFilterModel(QObject *parent);
+    explicit PartsSortFilterModel(QObject *parent);
 
     QSharedPointer<DownloadPackage> filterPackage() const;
     void setFilterPackage(const QSharedPointer<DownloadPackage> &filterPackage);

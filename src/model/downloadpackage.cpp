@@ -55,25 +55,21 @@ QList<QSharedPointer<DownloadPart> > DownloadPackage::parts() const
 
 void DownloadPackage::decrypt()
 {
-    if(status() != NewPackage)
-        return;
-
-    if(m_serienJunkiesReply)
-        delete m_serienJunkiesReply;
-
-    setStatusMessage(tr("Decrypting"));
-    setStatus(Decrypting);
-
     m_serienJunkiesReply = QSerienJunkies::decrypt(sourceUrl());
     connect(m_serienJunkiesReply, &QSerienJunkiesReply::error, this, &DownloadPackage::handleSerienjunkiesReplyError);
     connect(m_serienJunkiesReply, &QSerienJunkiesReply::requiresCaptcha, this, &DownloadPackage::requestSerienjunkiesCaptcha);
     connect(m_serienJunkiesReply, &QSerienJunkiesReply::finished, this, &DownloadPackage::parseSerienjunkiesDecryptReply);
+
+    setStatusMessage(tr("Decrypting"));
+    setStatus(Decrypting);
+    Qp::update(Qp::sharedFrom(this));
 }
 
 void DownloadPackage::handleSerienjunkiesReplyError()
 {
     setStatusMessage(tr("Error: %1").arg(m_serienJunkiesReply->errorString()));
     setStatus(Error);
+    Qp::update(Qp::sharedFrom(this));
 }
 
 void DownloadPackage::requestSerienjunkiesCaptcha()
@@ -84,6 +80,7 @@ void DownloadPackage::requestSerienjunkiesCaptcha()
     setTitle(m_serienJunkiesReply->packageName());
     setStatusMessage(tr("Requires captcha"));
     setStatus(RequiresCaptcha);
+    Qp::update(Qp::sharedFrom(this));
 }
 
 void DownloadPackage::solveCaptcha(const QString &captchaString)
@@ -99,6 +96,12 @@ void DownloadPackage::parseSerienjunkiesDecryptReply()
         addPart(part);
         Qp::update(part);
     }
+
+    setStatus(Decrypted);
+    setCaptchaPixmap(QPixmap());
+    setStatusMessage(tr("Decrypted"));
+    Qp::update(Qp::sharedFrom(this));
+    m_serienJunkiesReply.clear();
 }
 
 void DownloadPackage::setSourceUrl(QUrl arg)
@@ -144,12 +147,13 @@ bool DownloadPackage::isPackageUrl(const QUrl &url)
     return (url.host() == "download.serienjunkies.org");
 }
 
-QSharedPointer<DownloadPackage> DownloadPackage::createPackage(const QUrl &url)
+QSharedPointer<DownloadPackage> DownloadPackage::decrypt(const QUrl &url)
 {
     QSharedPointer<DownloadPackage> package = Qp::create<DownloadPackage>();
     package->setSourceUrl(url);
     package->setStatus(NewPackage);
     Qp::update(package);
+    package->decrypt();
     return package;
 }
 
