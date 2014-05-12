@@ -11,13 +11,17 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    static MainWindow *instance();
+    explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-private:
-    explicit MainWindow(QWidget *parent = 0);
+private slots:
+    void on_actionPreferences_triggered();
+    void on_actionClose_triggered();
+    void on_actionToggleDownloads_triggered();
 
-    static MainWindow *s_instance;
+    void reflectDownloadsState();
+
+private:
     Ui::MainWindow *ui;
 };
 

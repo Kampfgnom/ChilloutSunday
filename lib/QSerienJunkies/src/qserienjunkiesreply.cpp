@@ -35,7 +35,8 @@ public:
         finishedSeasons(0),
         seasonCount(0),
         downloadLinkCount(0),
-        finishedDownloadLinks(0)
+        finishedDownloadLinks(0),
+        reply(nullptr)
     {}
 
     QList<QSerienJunkiesReply::Series> series;
@@ -54,7 +55,7 @@ public:
     QList<QUrl> downloadLinks;
     QString packageName;
 
-    QPointer<QNetworkReply> reply;
+    QNetworkReply *reply;
 
     QSerienJunkiesReply *q;
 };
@@ -68,6 +69,7 @@ QSerienJunkiesReply::QSerienJunkiesReply(QObject *parent) :
 
 QSerienJunkiesReply::~QSerienJunkiesReply()
 {
+    delete data->reply;
 }
 
 void (QNetworkReply:: *ERRORSIGNAL)(QNetworkReply::NetworkError) = &QNetworkReply::error;
@@ -90,7 +92,8 @@ void QSerienJunkiesReply::seriesSearchReplyFinished()
 {
     QJsonParseError jsonError;
     QJsonDocument jsonDocument = QJsonDocument::fromJson(data->reply->readAll(), &jsonError);
-    data->reply.clear();
+    data->reply->deleteLater();
+    data->reply = nullptr;
 
     if(jsonError.error != QJsonParseError::NoError) {
         data->errorString = "The returned JSON was not valid: "+jsonError.errorString();
@@ -148,6 +151,8 @@ void QSerienJunkiesReply::searchSeasons(const QUrl &seriesUrl)
 void QSerienJunkiesReply::seasonSearchReplyFinished()
 {
     QString page = QString::fromUtf8(data->reply->readAll());
+    data->reply->deleteLater();
+    data->reply = nullptr;
 
     QRegularExpression reg("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br");
     QRegularExpressionMatchIterator it = reg.globalMatch(page);
@@ -173,6 +178,8 @@ void QSerienJunkiesReply::searchDownloads(const QUrl &seasonUrl)
 void QSerienJunkiesReply::downloadSearchReplyFinished()
 {
     QString page = QString::fromUtf8(data->reply->readAll());
+    data->reply->deleteLater();
+    data->reply = nullptr;
 
     if(page.isEmpty()) {
         QUrl location = data->reply->header(QNetworkRequest::LocationHeader).toUrl();
@@ -245,6 +252,9 @@ void QSerienJunkiesReply::decryptLinkReplyFinished()
 {
     QString page = QString::fromUtf8(data->reply->readAll());
     data->captchaPageUrl = data->reply->url();
+    data->reply->deleteLater();
+    data->reply = nullptr;
+
     decryptLinkReplyFinishedHelper(page);
 }
 
@@ -293,12 +303,19 @@ void QSerienJunkiesReply::decryptLinkReplyFinishedHelper(const QString &page)
 
     connect(data->reply, &QNetworkReply::finished, [=]() {
         data->captchaData = data->reply->readAll();
+        data->reply->deleteLater();
+        data->reply = nullptr;
+
         emit requiresCaptcha();
     });
 }
 
 void QSerienJunkiesReply::solveCaptcha(const QString &captcha)
 {
+    if(!data->captchaPageUrl.isValid()
+            || data->hiddenFormData.isEmpty())
+        return;
+
     QByteArray postData;
     postData += QString("s=%1").arg(data->hiddenFormData);
     postData += QString("&c=%1").arg(captcha);
@@ -320,6 +337,8 @@ QString QSerienJunkiesReply::packageName() const
 void QSerienJunkiesReply::decryptedLinkReplyFinished()
 {
     QString page = QString::fromUtf8(data->reply->readAll());
+    data->reply->deleteLater();
+    data->reply = nullptr;
 
     QRegularExpression findForms("\\<FORM ACTION=\"(.+)\" STYLE=\"display: inline;\" TARGET=\"_blank\"\\>");
     QRegularExpressionMatchIterator it = findForms.globalMatch(page);
@@ -357,6 +376,8 @@ void QSerienJunkiesReply::handleError()
 
     data->errorString = reply->errorString();
     reply->deleteLater();
+    if(reply == data->reply)
+        data->reply = nullptr;
     emit error();
 }
 
@@ -402,7 +423,6 @@ QList<QUrl> QSerienJunkiesReply::urls() const
 {
     return data->downloadLinks;
 }
-
 
 QList<QSerienJunkiesReply::DownloadLink> QSerienJunkiesReply::downloadLinks(const QSerienJunkiesReply::Format &format, const QStringList &mirrors) const
 {

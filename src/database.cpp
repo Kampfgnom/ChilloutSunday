@@ -35,9 +35,9 @@ bool Database::open(bool cleanDatabase)
         return false;
     }
 
-    m_file = dataLocation.absoluteFilePath(Database::FileName);
+    m_fileName = dataLocation.absoluteFilePath(Database::FileName);
 
-    QFile dbFile(m_file);
+    QFile dbFile(m_fileName);
     if(!dbFile.exists()) {
         cleanDatabase = true;
         if(!dbFile.open(QFile::WriteOnly)) {
@@ -45,7 +45,7 @@ bool Database::open(bool cleanDatabase)
             msg.setIcon(QMessageBox::Critical);
             msg.setText(tr("Could not create database!"));
             msg.setInformativeText(tr("Could not create file '%1'.")
-                                   .arg(m_file));
+                                   .arg(m_fileName));
             msg.exec();
             return false;
         }
@@ -53,7 +53,7 @@ bool Database::open(bool cleanDatabase)
     }
 
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(m_file);
+    db.setDatabaseName(m_fileName);
     if (!db.open()) {
         QMessageBox msg;
         msg.setIcon(QMessageBox::Critical);
@@ -80,7 +80,7 @@ bool Database::open(bool cleanDatabase)
     return true;
 }
 
-QString Database::file() const
+QString Database::fileName() const
 {
-    return m_file;
+    return m_fileName;
 }

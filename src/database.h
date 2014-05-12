@@ -11,12 +11,11 @@ public:
 
     bool open(bool cleanDatabase);
 
+    QString fileName() const;
+
     static const char *FileName;
-
-    QString file() const;
-
 private:
-    QString m_file;
+    QString m_fileName;
 };
 
 #endif // DATABASE_H

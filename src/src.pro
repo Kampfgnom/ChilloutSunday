@@ -55,11 +55,16 @@ SOURCES += main.cpp \
     ui/downloads/packagedelegate.cpp \
     model/downloadpart.cpp \
     model/downloadpackage.cpp \
-    ui/downloads/partsmodel.cpp
+    ui/downloads/partsmodel.cpp \
+    preferences.cpp \
+    ui/preferenceswindow.cpp \
+    application.cpp \
+    controller/downloads.cpp
 
 FORMS += \
     ui/mainwindow.ui \
-    ui/downloads/downloadspage.ui
+    ui/downloads/downloadspage.ui \
+    ui/preferenceswindow.ui
 
 HEADERS += \
     ui/mainwindow.h \
@@ -69,5 +74,9 @@ HEADERS += \
     ui/downloads/packagedelegate.h \
     model/downloadpart.h \
     model/downloadpackage.h \
-    ui/downloads/partsmodel.h
+    ui/downloads/partsmodel.h \
+    preferences.h \
+    ui/preferenceswindow.h \
+    application.h \
+    controller/downloads.h
 
