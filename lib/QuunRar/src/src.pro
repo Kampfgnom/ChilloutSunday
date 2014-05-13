@@ -8,19 +8,16 @@ VERSION         = $$QUUNRAR_VERSION
 TEMPLATE        = lib
 QT              +=
 QT              -= gui
-CONFIG          += static c++11
-QMAKE_CXXFLAGS  += $$QUUNRAR_COMMON_QMAKE_CXXFLAGS
+CONFIG          += static c++11 warn_on
 INCLUDEPATH     += $$QUUNRAR_INCLUDEPATH
-
-# Remove comment to build QuunRar in its own namespace
-# QUUNRAR_NAMESPACE = QuunRar
 
 
 ### Unrar DLL ###
 
-include(../lib/unrar/unrar.pri)
-INCLUDEPATH += $$UNRAR_INCLUDEPATH
-
+DEFINES += RARDLL _UNIX SILENT
+INCLUDEPATH += $$QUUNRAR_PATH/lib
+LIBS += -L$$QUUNRAR_PATH/lib/unrar -Lunrar
+POST_TARGETDEPS += $$QUUNRAR_PATH/lib/unrar/libunrar.a
 
 ### Files ###
 

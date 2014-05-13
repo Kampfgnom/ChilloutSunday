@@ -2,6 +2,7 @@
 
 #include "database.h"
 #include "controller/downloads.h"
+#include "controller/extraction.h"
 #include "model/downloadpart.h"
 #include "ui/mainwindow.h"
 
@@ -14,10 +15,11 @@ const char *ARG_CLEANDB("--cleanDatabase");
 
 Application::Application(int &argc, char **argv, int flags) :
     QApplication(argc, argv, flags),
+    m_mainWindow(nullptr),
     m_networkAccessManager(new QNetworkAccessManager(this)),
     m_database(new Database(this)),
     m_downloads(new Downloads(this)),
-    m_mainWindow(nullptr)
+    m_extraction(new Extraction(this))
 {
     setApplicationName("ChilloutSunday");
     setOrganizationName("LB Productions");
@@ -57,4 +59,9 @@ Downloads *Application::downloads() const
 MainWindow *Application::mainWindow() const
 {
     return m_mainWindow;
+}
+
+Extraction *Application::extraction() const
+{
+    return m_extraction;
 }

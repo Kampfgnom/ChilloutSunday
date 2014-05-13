@@ -30,6 +30,7 @@ LIBS            += $$QPERSISTENCE_LIBS
 INCLUDEPATH     += $$QPERSISTENCE_INCLUDEPATH
 POST_TARGETDEPS += $$QPERSISTENCE_POST_TARGETDEPS
 
+
 ### QSerienJunkies ###
 
 QSERIENJUNKIES_PATH = $$LIBPATH/QSerienJunkies
@@ -39,10 +40,13 @@ INCLUDEPATH     += $$QSERIENJUNKIES_INCLUDEPATH
 POST_TARGETDEPS += $$QSERIENJUNKIES_POST_TARGETDEPS
 
 
-### QtAwesome ###
+### QuunRar ###
 
-QTAWESOME_PATH = $$LIBPATH/QtAwesome/QtAwesome
-include($$QTAWESOME_PATH/QtAwesome.pri)
+QUUNRAR_PATH = $$LIBPATH/QuunRar
+include($$QUUNRAR_PATH/QuunRar.pri)
+LIBS            += $$QUUNRAR_LIBS
+INCLUDEPATH     += $$QUUNRAR_INCLUDEPATH
+POST_TARGETDEPS += $$QUUNRAR_POST_TARGETDEPS
 
 
 ### Files ###
@@ -59,7 +63,8 @@ SOURCES += main.cpp \
     preferences.cpp \
     ui/preferenceswindow.cpp \
     application.cpp \
-    controller/downloads.cpp
+    controller/downloads.cpp \
+    controller/extraction.cpp
 
 FORMS += \
     ui/mainwindow.ui \
@@ -78,5 +83,6 @@ HEADERS += \
     preferences.h \
     ui/preferenceswindow.h \
     application.h \
-    controller/downloads.h
+    controller/downloads.h \
+    controller/extraction.h
 

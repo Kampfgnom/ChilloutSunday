@@ -59,6 +59,7 @@ private slots:
     void cleanup();
     void readBytes();
     void finishDownload();
+    void extractIfComplete();
 
 private:
     friend class DownloadPackage;

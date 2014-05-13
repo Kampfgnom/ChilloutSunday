@@ -1,5 +1,11 @@
-UNRAR_PATH = $$PWD
-UNRAR_INCLUDEPATH = $$PWD/include
+### General config ###
+
+TARGET          = unrar
+VERSION         = 4.20.0
+TEMPLATE        = lib
+QT              -= gui
+CONFIG          += static c++11 warn_off
+INCLUDEPATH     += $$QUUNRAR_INCLUDEPATH
 
 DEFINES += RARDLL _UNIX SILENT
 
@@ -89,14 +95,14 @@ SOURCES += \
     $$PWD/savepos.cpp \
     $$PWD/rs.cpp \
     $$PWD/rijndael.cpp \
-    $$PWD/resource.cpp \
+#    $$PWD/resource.cpp \
     $$PWD/recvol.cpp \
     $$PWD/rdwrfn.cpp \
     $$PWD/rawread.cpp \
     $$PWD/rarvmtbl.cpp \
     $$PWD/rarvm.cpp \
-    $$PWD/rarpch.cpp \
-    $$PWD/rar.cpp \
+#    $$PWD/rarpch.cpp \
+#    $$PWD/rar.cpp \
     $$PWD/pathfn.cpp \
     $$PWD/os2ea.cpp \
     $$PWD/options.cpp \
@@ -104,7 +110,7 @@ SOURCES += \
     $$PWD/match.cpp \
     $$PWD/log.cpp \
     $$PWD/list.cpp \
-    $$PWD/isnt.cpp \
+#    $$PWD/isnt.cpp \
     $$PWD/global.cpp \
     $$PWD/getbits.cpp \
     $$PWD/find.cpp \

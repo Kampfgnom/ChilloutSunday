@@ -4,6 +4,7 @@
 
 #include <preferences.h>
 #include <application.h>
+#include <controller/extraction.h>
 
 #include <QUrlQuery>
 #include <QDir>
@@ -332,6 +333,13 @@ void DownloadPart::finishDownload()
     qDebug() << "FINISHED" << fileName();
     cleanup();
 
-    if(bytesWritten() == fileSize())
+    if(bytesWritten() == fileSize()) {
+        extractIfComplete();
         emit finished();
+    }
+}
+
+void DownloadPart::extractIfComplete()
+{
+    qApp->extraction()->extractIfComplete(package());
 }

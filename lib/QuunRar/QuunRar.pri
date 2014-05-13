@@ -5,8 +5,5 @@ isEmpty(QUUNRAR_PATH) {
 QUUNRAR_TARGET           = quunrar
 QUUNRAR_VERSION          = 0.1.0
 QUUNRAR_INCLUDEPATH      = $$PWD/include
-QUUNRAR_LIBS             = -L$$QUUNRAR_PATH/src -l$$QUUNRAR_TARGET
-
-QUUNRAR_QMAKE_CXXFLAGS = -Wall -ansi -pedantic \ # Gives us more compiler warnings
-                         -Wno-long-long  # When using -pedantic, the qglobal.h does not
-                                         # compile because illegal usage of long long
+QUUNRAR_LIBS             = -L$$QUUNRAR_PATH/src -l$$QUUNRAR_TARGET -L$$QUUNRAR_PATH/lib/unrar -lunrar
+QUUNRAR_POST_TARGETDEPS  = $$QUUNRAR_PATH/src/lib$${QUUNRAR_TARGET}.a

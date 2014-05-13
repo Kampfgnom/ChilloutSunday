@@ -9,6 +9,7 @@ class DownloadPart;
 class Database;
 class Downloads;
 class MainWindow;
+class Extraction;
 
 #if defined(qApp)
 #undef qApp
@@ -21,16 +22,18 @@ public:
     Application(int &argc, char **argv, int flags = ApplicationFlags);
     int exec();
 
+    MainWindow *mainWindow() const;
     QNetworkAccessManager *networkAccessManager() const;
     Database *database() const;
     Downloads *downloads() const;
-    MainWindow *mainWindow() const;
+    Extraction *extraction() const;
 
 private:
+    MainWindow *m_mainWindow;
     QNetworkAccessManager *m_networkAccessManager;
     Database *m_database;
     Downloads *m_downloads;
-    MainWindow *m_mainWindow;
+    Extraction *m_extraction;
 };
 
 #endif // CONTROLLER_H

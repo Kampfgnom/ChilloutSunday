@@ -46,6 +46,19 @@ QList<QSharedPointer<DownloadPart> > DownloadPackage::parts() const
     return m_parts;
 }
 
+bool DownloadPackage::isDownloadFinished()
+{
+    if(parts().isEmpty())
+        return false;
+
+    foreach(QSharedPointer<DownloadPart> part, parts()) {
+        if(!part->isFinished())
+            return false;
+    }
+
+    return true;
+}
+
 void DownloadPackage::setSourceUrl(QUrl arg)
 {
     if (m_sourceUrl != arg) {

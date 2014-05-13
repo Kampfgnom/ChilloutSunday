@@ -22,6 +22,8 @@ public:
     QPixmap captchaPixmap() const;
     QList<QSharedPointer<DownloadPart> > parts() const;
 
+    bool isDownloadFinished();
+
     static bool isPackageUrl(const QUrl &url);
     static QSharedPointer<DownloadPackage> decrypt(const QUrl &url);
 
@@ -32,6 +34,8 @@ signals:
     void sourceUrlChanged(QUrl arg);
     void captchaPixmapChanged(QPixmap arg);
     void partsChanged(QList<QSharedPointer<DownloadPart> > arg);
+
+    void downloadFinished();
 
 private slots:
     void decrypt();
@@ -47,6 +51,8 @@ private slots:
     void removePart(QSharedPointer<DownloadPart> arg);
 
 private:
+    friend class DownloadPart;
+
     QUrl m_sourceUrl;
     QPixmap m_captcha;
 
