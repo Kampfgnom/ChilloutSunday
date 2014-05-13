@@ -12,7 +12,7 @@
 static void (QNetworkReply:: *ERRORSIGNAL)(QNetworkReply::NetworkError) = &QNetworkReply::error;
 static const QRegularExpression LOCATION_REGEXP(QLatin1String("location\":\"(http[^\"]+)"));
 static const  QRegularExpression FILENAME_REGEXP(QLatin1String("filename=\\\"(.*)\\\""));
-static qint64 BUFFERSIZE = (2 << 18);
+static qint64 BUFFERSIZE = (2 << 19);
 
 QString fileNameFromUrl(const QUrl &url)
 {
@@ -196,7 +196,12 @@ void DownloadPart::startDownload()
     }
 
     m_running = true;
-    m_bytesWritten = 0;
+
+    QFileInfo info(m_fileName);
+    if(info.exists())
+        m_bytesWritten = info.size();
+    else
+        m_bytesWritten = 0;
 
     Qp::update(Qp::sharedFrom(this));
 
@@ -210,7 +215,6 @@ void DownloadPart::startDownload()
 void DownloadPart::parseFileInfo()
 {
     setFileName(fileNameFromReply(m_reply));
-    setFileSize(m_reply->header(QNetworkRequest::ContentLengthHeader).toInt());
     qDebug() << "Filename: " << fileName();
 
     QUrlQuery query;
@@ -246,8 +250,19 @@ void DownloadPart::startPremiumizeMeDownload()
     else
         qDebug() << "REDIRECT" << downloadUrl;
 
+    QNetworkRequest request = QNetworkRequest(downloadUrl);
+    request.setAttribute(QNetworkRequest::HttpPipeliningAllowedAttribute, true);
+
+    if(m_bytesWritten > 0) {
+        QByteArray data;
+        QString strData("bytes=" + QString::number(m_bytesWritten) + "-");
+
+        data = strData.toLatin1();
+        request.setRawHeader("Range", data);
+    }
+
     m_reply->deleteLater();
-    m_reply = qApp->networkAccessManager()->get(QNetworkRequest(downloadUrl));
+    m_reply = qApp->networkAccessManager()->get(request);
     m_reply->setReadBufferSize(0);
 
     qDebug() << "GET" << downloadUrl;
@@ -261,28 +276,18 @@ void DownloadPart::startPremiumizeMeDownload()
 
 void DownloadPart::readBytes()
 {
-    qint64 bytesAvailable = m_reply->bytesAvailable();
-    if(fileSize() == 0)
-        setFileSize(m_reply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    if(fileSize() == 0) {
+        setFileSize(bytesWritten() + m_reply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    }
 
+    qint64 bytesAvailable = m_reply->bytesAvailable();
     if (bytesAvailable < BUFFERSIZE)
         return;
 
     if (!m_file) {
         m_file = new QFile(fileName());
-        if (m_file->exists()) {
-            qDebug() << "REMOVING FILE" << m_file->fileName();
-            if (!m_file->remove()) {
-                qDebug() << (QString("Could not remove existing file '%1': %2")
-                             .arg(m_file->fileName())
-                             .arg(m_file->errorString()));
-                stopDownload();
-                return;
-            }
-        }
-
         qDebug() << "OPENING FILE" << m_file->fileName();
-        if (!m_file->open(QIODevice::WriteOnly)) {
+        if (!m_file->open(QIODevice::Append)) {
             qDebug() << (QString("Could not write to file '%1': %2")
                          .arg(m_file->fileName())
                          .arg(m_file->errorString()));
@@ -310,11 +315,7 @@ void DownloadPart::readBytes()
     Q_ASSERT(read == write);
 
     increaseBytesWritten(write);
-
-    if(m_updateTimer.hasExpired(1000)) {
-        Qp::update(Qp::sharedFrom(this));
-        m_updateTimer.start();
-    }
+    Qp::update(Qp::sharedFrom(this));
 }
 
 void DownloadPart::finishDownload()

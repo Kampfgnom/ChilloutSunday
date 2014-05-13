@@ -72,8 +72,6 @@ private:
     QFile *m_file;
     char *m_buffer;
     quint64 m_bytesWritten;
-
-    QElapsedTimer m_updateTimer;
 };
 
 #endif // DOWNLOADPART_H
